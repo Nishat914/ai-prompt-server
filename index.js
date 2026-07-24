@@ -33,6 +33,39 @@ async function run() {
     await client.connect();
     const db = client.db("ai-prompt");
     
+     const promptsCollection = db.collection("prompts");
+
+    app.post("/prompts", async (req, res) => {
+        try {
+            const promptData = req.body;
+
+            const newPrompt = {
+            ...promptData,
+
+            copyCount: 0,
+
+            status: "pending",
+
+            createdAt: new Date(),
+            };
+
+            const result = await promptsCollection.insertOne(newPrompt);
+
+            res.status(201).send({
+            success: true,
+            message: "Prompt submitted successfully.",
+            insertedId: result.insertedId,
+            });
+
+        } catch (err) {
+
+            res.status(500).send({
+            message: "Something went wrong.",
+            });
+
+        }
+    });
+            
 
     await client.db("admin").command({ ping: 1 });
     console.log(
