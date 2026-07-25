@@ -34,7 +34,7 @@ async function run() {
     const db = client.db("ai-prompt");
     
      const promptsCollection = db.collection("prompts");
-
+    // post
     app.post("/prompts", async (req, res) => {
         try {
             const promptData = req.body;
@@ -65,7 +65,23 @@ async function run() {
 
         }
     });
-            
+    //  get
+    app.get("/prompts", async (req, res) => {
+        
+
+        const result = await promptsCollection.find().toArray();
+
+        res.json(result);
+    });
+    app.get("/prompts/:id" , async (req, res) => {
+          const { id } = req.params;
+    
+          const result = await promptsCollection.findOne({
+            _id: new ObjectId(id),
+          });
+    
+          res.json(result);
+        });       
 
     await client.db("admin").command({ ping: 1 });
     console.log(
