@@ -65,7 +65,40 @@ async function run() {
 
         }
     });
+    app.delete("/prompts/:id" , async (req, res) => {
+            const id = req.params.id;
+
+            const result = await promptsCollection.deleteOne({
+                _id: new ObjectId(id),
+            });
+
+            res.send(result);
+        });
+        app.patch("/prompts/:id" , async (req, res) => {
+            const id = req.params.id;
+            const updatedData = req.body;
+
+            const result = await promptsCollection.updateOne(
+                { _id: new ObjectId(id) },
+                {
+                $set: updatedData,
+                }
+            );
+
+            res.send(result);
+            });
     //  get
+    app.get("/my-prompt/:email", async (req, res) => {
+            const email = req.params.email;
+
+            const query = {
+                creatorEmail: email,
+            };
+
+            const result = await promptsCollection.find(query).toArray();
+
+            res.send(result);
+        });
     app.get("/prompts", async (req, res) => {
         const { search, category } = req.query;
 
