@@ -67,12 +67,25 @@ async function run() {
     });
     //  get
     app.get("/prompts", async (req, res) => {
-        
+        const { search, category } = req.query;
 
-        const result = await promptsCollection.find().toArray();
+        let query = {};
+
+        if (search) {
+          query.title = {
+            $regex: search,
+            $options: "i",
+          };
+        }
+
+        if (category) {
+          query.category = category;
+        }
+
+        const result = await promptsCollection.find(query).toArray();
 
         res.json(result);
-    });
+      });
     app.get("/prompts/:id" , async (req, res) => {
           const { id } = req.params;
     
