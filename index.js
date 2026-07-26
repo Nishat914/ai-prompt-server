@@ -34,7 +34,40 @@ async function run() {
     const db = client.db("ai-prompt");
     
      const promptsCollection = db.collection("prompts");
+     const bookmarksCollection = db.collection("bookmarks");
     // post
+    app.post("/bookmarks", async (req, res) => {
+      const { promptId, userEmail } = req.body;
+
+      const existing = await bookmarksCollection.findOne({
+        promptId,
+        userEmail,
+      });
+
+      if (existing) {
+        await bookmarksCollection.deleteOne({
+          _id: existing._id,
+        });
+
+        return res.send({
+          bookmarked: false,
+          message: "Bookmark removed",
+        });
+      }
+
+      const bookmark = {
+        promptId,
+        userEmail,
+        createdAt: new Date(),
+      };
+
+      await bookmarksCollection.insertOne(bookmark);
+
+      res.send({
+        bookmarked: true,
+        message: "Prompt bookmarked",
+      });
+    });
     app.post("/prompts", async (req, res) => {
         try {
             const promptData = req.body;
@@ -88,6 +121,18 @@ async function run() {
             res.send(result);
             });
     //  get
+    app.get("/bookmarks/:promptId/:email", async (req, res) => {
+      const { promptId, email } = req.params;
+
+      const bookmark = await bookmarksCollection.findOne({
+        promptId,
+        userEmail: email,
+      });
+
+      res.send({
+        bookmarked: !!bookmark,
+      });
+    });
     app.get("/my-prompt/:email", async (req, res) => {
             const email = req.params.email;
 
