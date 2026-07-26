@@ -120,6 +120,16 @@ async function run() {
 
             res.send(result);
             });
+    app.delete("/bookmarks/:promptId/:email", async (req, res) => {
+      const { promptId, email } = req.params;
+
+      const result = await bookmarksCollection.deleteOne({
+        promptId,
+        userEmail: email,
+      });
+
+      res.send(result);
+    });
     //  get
     app.get("/saved-prompts/:email", async (req, res) => {
       const email = req.params.email;
