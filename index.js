@@ -35,6 +35,7 @@ async function run() {
     
      const promptsCollection = db.collection("prompts");
      const bookmarksCollection = db.collection("bookmarks");
+     const reviewsCollection = db.collection("reviews");
     // post
     app.post("/bookmarks", async (req, res) => {
       const { promptId, userEmail } = req.body;
@@ -144,6 +145,27 @@ async function run() {
 
       res.send(result);
     });
+    app.post("/reviews", async (req, res) => {
+  const review = req.body;
+
+  
+  const existing = await reviewsCollection.findOne({
+    promptId: review.promptId,
+    userEmail: review.userEmail,
+  });
+
+  if (existing) {
+    return res.status(400).send({
+      message: "You have already reviewed this prompt.",
+    });
+  }
+
+  review.createdAt = new Date();
+
+  const result = await reviewsCollection.insertOne(review);
+
+  res.send(result);
+});
     //  get
     app.get("/saved-prompts/:email", async (req, res) => {
       const email = req.params.email;
