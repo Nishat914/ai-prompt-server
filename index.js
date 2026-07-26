@@ -121,6 +121,25 @@ async function run() {
             res.send(result);
             });
     //  get
+    app.get("/saved-prompts/:email", async (req, res) => {
+      const email = req.params.email;
+
+      const bookmarks = await bookmarksCollection
+        .find({ userEmail: email })
+        .toArray();
+
+      const ids = bookmarks.map(
+        (item) => new ObjectId(item.promptId)
+      );
+
+      const prompts = await promptsCollection
+        .find({
+          _id: { $in: ids },
+        })
+        .toArray();
+
+      res.send(prompts);
+    });
     app.get("/bookmarks/:promptId/:email", async (req, res) => {
       const { promptId, email } = req.params;
 
