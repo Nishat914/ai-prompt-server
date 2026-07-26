@@ -167,6 +167,24 @@ async function run() {
       res.send(result);
     });
     //  get
+    app.get("/my-reviews/:email", async (req, res) => {
+      try {
+        const { email } = req.params;
+
+        const result = await reviewsCollection
+          .find({ userEmail: email })
+          .sort({ createdAt: -1 })
+          .toArray();
+
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+
+        res.status(500).send({
+          message: "Failed to fetch reviews",
+        });
+      }
+    });
     app.get("/reviews/:promptId", async (req, res) => {
       try {
         const { promptId } = req.params;
