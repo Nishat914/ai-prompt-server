@@ -146,27 +146,44 @@ async function run() {
       res.send(result);
     });
     app.post("/reviews", async (req, res) => {
-  const review = req.body;
+      const review = req.body;
 
-  
-  const existing = await reviewsCollection.findOne({
-    promptId: review.promptId,
-    userEmail: review.userEmail,
-  });
+      
+      const existing = await reviewsCollection.findOne({
+        promptId: review.promptId,
+        userEmail: review.userEmail,
+      });
 
-  if (existing) {
-    return res.status(400).send({
-      message: "You have already reviewed this prompt.",
+      if (existing) {
+        return res.status(400).send({
+          message: "You have already reviewed this prompt.",
+        });
+      }
+
+      review.createdAt = new Date();
+
+      const result = await reviewsCollection.insertOne(review);
+
+      res.send(result);
     });
-  }
-
-  review.createdAt = new Date();
-
-  const result = await reviewsCollection.insertOne(review);
-
-  res.send(result);
-});
     //  get
+    app.get("/reviews/:promptId", async (req, res) => {
+      try {
+        const { promptId } = req.params;
+
+        const result = await reviewsCollection
+          .find({ promptId })
+          .sort({ createdAt: -1 }) 
+          .toArray();
+
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send({
+          message: "Failed to fetch reviews",
+        });
+      }
+    });
     app.get("/saved-prompts/:email", async (req, res) => {
       const email = req.params.email;
 
