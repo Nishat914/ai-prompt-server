@@ -130,6 +130,20 @@ async function run() {
 
       res.send(result);
     });
+    app.patch("/prompts/copy/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const result = await promptsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $inc: {
+            copyCount: 1,
+          },
+        }
+      );
+
+      res.send(result);
+    });
     //  get
     app.get("/saved-prompts/:email", async (req, res) => {
       const email = req.params.email;
