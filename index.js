@@ -37,8 +37,36 @@ async function run() {
      const bookmarksCollection = db.collection("bookmarks");
      const reviewsCollection = db.collection("reviews");
     const reportsCollection = db.collection("reports");
+    const subscriptionCollection = db.collection("subscription");
+    const userCollection = db.collection("user");
 
     // post
+    
+   
+
+    app.post("/subscription", async (req, res) => {
+      const { user, session_id } = req.body;
+
+      const isExistSession = await subscriptionCollection.findOne({session_id})
+      if(isExistSession){
+        return res.status(400).send({message: "Session already exist"})
+      }
+
+      const subs_result = await subscriptionCollection.insertOne({
+        userId: new ObjectId(user.id),
+        session_id,
+      });
+
+      const user_result = await userCollection.updateOne(
+        { _id: new ObjectId(user.id) },
+        { $set: { plan: "pro" } },
+      );
+
+
+      
+      res.send({ subs_result, user_result });
+
+    });
     app.post("/bookmarks", async (req, res) => {
       const { promptId, userEmail } = req.body;
 
