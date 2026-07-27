@@ -36,6 +36,8 @@ async function run() {
      const promptsCollection = db.collection("prompts");
      const bookmarksCollection = db.collection("bookmarks");
      const reviewsCollection = db.collection("reviews");
+    const reportsCollection = db.collection("reports");
+
     // post
     app.post("/bookmarks", async (req, res) => {
       const { promptId, userEmail } = req.body;
@@ -165,7 +167,35 @@ async function run() {
       const result = await reviewsCollection.insertOne(review);
 
       res.send(result);
+
     });
+
+    app.post("/reports", async (req, res) => {
+  try {
+    const report = req.body;
+
+    const existing = await reportsCollection.findOne({
+      promptId: report.promptId,
+      userEmail: report.userEmail,
+    });
+
+    if (existing) {
+      return res.status(400).send({
+        message: "You have already reported this prompt.",
+      });
+    }
+
+    const result = await reportsCollection.insertOne(report);
+
+    res.send(result);
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).send({
+      message: "Failed to submit report.",
+    });
+  }
+});
     //  get
     app.get("/my-reviews/:email", async (req, res) => {
       try {
@@ -247,7 +277,9 @@ async function run() {
     app.get("/prompts", async (req, res) => {
         const { search, category } = req.query;
 
-        let query = {};
+        let query = {
+          status: "approved",
+        };
 
         if (search) {
           query.title = {
