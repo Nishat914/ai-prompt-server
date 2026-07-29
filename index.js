@@ -224,24 +224,50 @@ async function run() {
       message: "Failed to submit report.",
     });
   }
-});
+    });
+    app.patch("/users/role/:id", async (req, res) => {
+      const { id } = req.params;
+      const { role } = req.body;
+
+      const result = await userCollection.updateOne(
+        {
+          _id: new ObjectId(id),
+        },
+        {
+          $set: {
+            role,
+          },
+        }
+      );
+
+      res.send(result);
+    });
+    app.delete("/users/:id", async (req, res) => {
+      const { id } = req.params;
+
+      const result = await userCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+
+      res.send(result);
+    });
     //  get
     app.get("/users", async (req, res) => {
-  try {
-    const users = await userCollection
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray();
+      try {
+        const users = await userCollection
+          .find({})
+          .sort({ createdAt: -1 })
+          .toArray();
 
-    res.send(users);
-  } catch (error) {
-    console.log(error);
+        res.send(users);
+      } catch (error) {
+        console.log(error);
 
-    res.status(500).send({
-      message: "Failed to fetch users",
+        res.status(500).send({
+          message: "Failed to fetch users",
+        });
+      }
     });
-  }
-});
     app.get("/my-reviews/:email", async (req, res) => {
       try {
         const { email } = req.params;
