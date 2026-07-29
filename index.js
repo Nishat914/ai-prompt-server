@@ -110,7 +110,8 @@ async function run() {
             copyCount: 0,
 
             status: "pending",
-
+            featured: false,
+            rejectionFeedback: "",
             createdAt: new Date(),
             };
 
@@ -251,7 +252,85 @@ async function run() {
 
       res.send(result);
     });
+    app.patch("/admin/prompts/approve/:id", async (req, res) => {
+      const { id } = req.params;
+
+      const result = await promptsCollection.updateOne(
+        {
+          _id: new ObjectId(id),
+        },
+        {
+          $set: {
+            status: "approved",
+            rejectionFeedback: "",
+          },
+        }
+      );
+
+      res.send(result);
+    });
+    app.patch("/admin/prompts/reject/:id", async (req, res) => {
+
+      const { id } = req.params;
+      const { feedback } = req.body;
+
+      const result = await promptsCollection.updateOne(
+        {
+          _id: new ObjectId(id),
+        },
+        {
+          $set: {
+            status: "rejected",
+            rejectionFeedback: feedback,
+          },
+        }
+      );
+
+      res.send(result);
+
+    });
+    app.patch("/admin/prompts/feature/:id", async (req, res) => {
+
+      const { id } = req.params;
+
+      const prompt = await promptsCollection.findOne({
+        _id: new ObjectId(id),
+      });
+
+      const result = await promptsCollection.updateOne(
+        {
+          _id: new ObjectId(id),
+        },
+        {
+          $set: {
+            featured: !prompt.featured,
+          },
+        }
+      );
+
+      res.send(result);
+
+    });
+    app.delete("/admin/prompts/:id", async (req, res) => {
+
+      const { id } = req.params;
+
+      const result = await promptsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+
+      res.send(result);
+
+    });
     //  get
+    app.get("/admin/prompts", async (req, res) => {
+      const result = await promptsCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      res.send(result);
+    });
     app.get("/users", async (req, res) => {
       try {
         const users = await userCollection
