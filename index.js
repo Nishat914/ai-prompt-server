@@ -30,7 +30,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const db = client.db("ai-prompt");
     
      const promptsCollection = db.collection("prompts");
@@ -55,11 +55,12 @@ async function run() {
       const subs_result = await subscriptionCollection.insertOne({
         userId: new ObjectId(user.id),
         session_id,
+        paymentDate: new Date(),
       });
 
       const user_result = await userCollection.updateOne(
         { _id: new ObjectId(user.id) },
-        { $set: { plan: "pro" } },
+        { $set: { plan: "premium" } },
       );
 
 
@@ -138,7 +139,7 @@ async function run() {
 
             res.send(result);
         });
-        app.patch("/prompts/:id" , async (req, res) => {
+    app.patch("/prompts/:id" , async (req, res) => {
             const id = req.params.id;
             const updatedData = req.body;
 
@@ -199,7 +200,7 @@ async function run() {
     });
 
     app.post("/reports", async (req, res) => {
-  try {
+     try {
     const report = req.body;
 
     const existing = await reportsCollection.findOne({
@@ -225,6 +226,22 @@ async function run() {
   }
 });
     //  get
+    app.get("/users", async (req, res) => {
+  try {
+    const users = await userCollection
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.send(users);
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).send({
+      message: "Failed to fetch users",
+    });
+  }
+});
     app.get("/my-reviews/:email", async (req, res) => {
       try {
         const { email } = req.params;
@@ -334,7 +351,7 @@ async function run() {
           res.json(result);
         });       
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
