@@ -322,7 +322,56 @@ async function run() {
       res.send(result);
 
     });
+    app.delete("/admin/reports/remove/:id", async (req, res) => {
+
+      const { id } = req.params;
+
+      const deletePrompt = await reportsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+
+      
+
+      res.send(deletePrompt);
+    });
+    app.patch("/admin/reports/warn/:id", async (req, res) => {
+
+  const result = await reportsCollection.updateOne(
+    {
+      _id: new ObjectId(req.params.id),
+    },
+    {
+      $set: {
+        status: "warned",
+      },
+    }
+  );
+
+  res.send(result);
+
+});
+app.patch("/admin/reports/dismiss/:id", async (req, res) => {
+
+  const result = await reportsCollection.updateOne(
+    {
+      _id: new ObjectId(req.params.id),
+    },
+    {
+      $set: {
+        status: "dismissed",
+      },
+    }
+  );
+
+  res.send(result);
+
+});
     //  get
+    
+    app.get("/admin/reports", async (req, res) => {
+      const result = await reportsCollection.find().toArray();
+      res.send(result);
+    });
     app.get("/admin/prompts", async (req, res) => {
       const result = await promptsCollection
         .find()
