@@ -336,38 +336,107 @@ async function run() {
     });
     app.patch("/admin/reports/warn/:id", async (req, res) => {
 
-  const result = await reportsCollection.updateOne(
-    {
-      _id: new ObjectId(req.params.id),
-    },
-    {
-      $set: {
-        status: "warned",
-      },
-    }
-  );
+      const result = await reportsCollection.updateOne(
+        {
+          _id: new ObjectId(req.params.id),
+        },
+        {
+          $set: {
+            status: "warned",
+          },
+        }
+      );
 
-  res.send(result);
+      res.send(result);
 
-});
-app.patch("/admin/reports/dismiss/:id", async (req, res) => {
+    });
+    app.patch("/admin/reports/dismiss/:id", async (req, res) => {
 
-  const result = await reportsCollection.updateOne(
-    {
-      _id: new ObjectId(req.params.id),
-    },
-    {
-      $set: {
-        status: "dismissed",
-      },
-    }
-  );
+      const result = await reportsCollection.updateOne(
+        {
+          _id: new ObjectId(req.params.id),
+        },
+        {
+          $set: {
+            status: "dismissed",
+          },
+        }
+      );
 
-  res.send(result);
+      res.send(result);
 
-});
+    });
     //  get
-    
+    app.get("/admin/analytics", async (req, res) => {
+  const totalUsers = await userCollection.countDocuments();
+
+  const totalPrompts = await promptsCollection.countDocuments();
+
+  const totalReviews = await reviewsCollection.countDocuments();
+  const totalPayments = await subscriptionCollection.countDocuments();
+
+const premiumUsers = await userCollection.countDocuments({
+  plan: "premium",
+});
+
+  const copyResult = await promptsCollection
+    .aggregate([
+      {
+        $group: {
+          _id: null,
+          totalCopies: {
+            $sum: "$copyCount",
+          },
+        },
+      },
+    ])
+    .toArray();
+
+  const totalCopies = copyResult[0]?.totalCopies || 0;
+
+  res.send({
+    totalUsers,
+    totalPrompts,
+    totalReviews,
+    totalCopies,
+    totalPayments,
+    premiumUsers,
+  });
+});
+    app.get("/admin/payments", async (req, res) => {
+  const result = await subscriptionCollection.aggregate([
+    {
+      $lookup: {
+        from: "user", // user collection-এর নাম
+        localField: "userId",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    {
+      $unwind: {
+        path: "$user",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        session_id: 1,
+        paymentDate: 1,
+        "user.name": 1,
+        "user.email": 1,
+        "user.plan": 1,
+      },
+    },
+    {
+      $sort: {
+        paymentDate: -1,
+      },
+    },
+  ]).toArray();
+
+  res.send(result);
+});
     app.get("/admin/reports", async (req, res) => {
       const result = await reportsCollection.find().toArray();
       res.send(result);
