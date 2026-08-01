@@ -367,76 +367,134 @@ async function run() {
 
     });
     //  get
+    app.get("/creator/analytics/:email", async (req, res) => {
+      const { email } = req.params;
+
+      const prompts = await promptsCollection
+        .find({ creatorEmail: email })
+        .toArray();
+
+      // Summary Cards
+      const totalPrompts = prompts.length;
+
+      const totalCopies = prompts.reduce(
+        (sum, prompt) => sum + (prompt.copyCount || 0),
+        0
+      );
+
+      const totalBookmarks = prompts.reduce(
+        (sum, prompt) => sum + (prompt.bookmarkCount || 0),
+        0
+      );
+
+      // Copies Chart
+      const copiesChart = prompts.map((prompt) => ({
+        name: prompt.title,
+        copies: prompt.copyCount || 0,
+      }));
+
+      // Prompt Growth (Month Wise)
+      const growthMap = {};
+
+      prompts.forEach((prompt) => {
+        const month = new Date(prompt.createdAt).toLocaleString("default", {
+          month: "short",
+        });
+
+        if (growthMap[month]) {
+          growthMap[month]++;
+        } else {
+          growthMap[month] = 1;
+        }
+      });
+
+      const growthChart = [];
+
+      for (const month in growthMap) {
+        growthChart.push({
+          month,
+          prompts: growthMap[month],
+        });
+      }
+
+      res.send({
+        totalPrompts,
+        totalCopies,
+        totalBookmarks,
+        copiesChart,
+        growthChart,
+      });
+    });
     app.get("/admin/analytics", async (req, res) => {
-  const totalUsers = await userCollection.countDocuments();
+      const totalUsers = await userCollection.countDocuments();
 
-  const totalPrompts = await promptsCollection.countDocuments();
+      const totalPrompts = await promptsCollection.countDocuments();
 
-  const totalReviews = await reviewsCollection.countDocuments();
-  const totalPayments = await subscriptionCollection.countDocuments();
+      const totalReviews = await reviewsCollection.countDocuments();
+      const totalPayments = await subscriptionCollection.countDocuments();
 
-const premiumUsers = await userCollection.countDocuments({
-  plan: "premium",
-});
+    const premiumUsers = await userCollection.countDocuments({
+      plan: "premium",
+    });
 
-  const copyResult = await promptsCollection
-    .aggregate([
-      {
-        $group: {
-          _id: null,
-          totalCopies: {
-            $sum: "$copyCount",
+      const copyResult = await promptsCollection
+        .aggregate([
+          {
+            $group: {
+              _id: null,
+              totalCopies: {
+                $sum: "$copyCount",
+              },
+            },
+          },
+        ])
+        .toArray();
+
+      const totalCopies = copyResult[0]?.totalCopies || 0;
+
+      res.send({
+        totalUsers,
+        totalPrompts,
+        totalReviews,
+        totalCopies,
+        totalPayments,
+        premiumUsers,
+      });
+    });
+    app.get("/admin/payments", async (req, res) => {
+      const result = await subscriptionCollection.aggregate([
+        {
+          $lookup: {
+            from: "user", // user collection-এর নাম
+            localField: "userId",
+            foreignField: "_id",
+            as: "user",
           },
         },
-      },
-    ])
-    .toArray();
+        {
+          $unwind: {
+            path: "$user",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $project: {
+            session_id: 1,
+            paymentDate: 1,
+            "user.name": 1,
+            "user.email": 1,
+            "user.plan": 1,
+          },
+        },
+        {
+          $sort: {
+            paymentDate: -1,
+          },
+        },
+      ]).toArray();
 
-  const totalCopies = copyResult[0]?.totalCopies || 0;
-
-  res.send({
-    totalUsers,
-    totalPrompts,
-    totalReviews,
-    totalCopies,
-    totalPayments,
-    premiumUsers,
-  });
-});
-    app.get("/admin/payments", async (req, res) => {
-  const result = await subscriptionCollection.aggregate([
-    {
-      $lookup: {
-        from: "user", // user collection-এর নাম
-        localField: "userId",
-        foreignField: "_id",
-        as: "user",
-      },
-    },
-    {
-      $unwind: {
-        path: "$user",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $project: {
-        session_id: 1,
-        paymentDate: 1,
-        "user.name": 1,
-        "user.email": 1,
-        "user.plan": 1,
-      },
-    },
-    {
-      $sort: {
-        paymentDate: -1,
-      },
-    },
-  ]).toArray();
-
-  res.send(result);
-});
+      res.send(result);
+    });
     app.get("/admin/reports", async (req, res) => {
       const result = await reportsCollection.find().toArray();
       res.send(result);
