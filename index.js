@@ -367,6 +367,31 @@ async function run() {
 
     });
     //  get
+    app.get("/customer-reviews", async (req, res) => {
+      const result = await reviewsCollection
+        .aggregate([
+          {
+            $sort: {
+              createdAt: -1,
+            },
+          },
+          {
+            $limit: 6,
+          },
+          {
+            $project: {
+              userName: 1,
+              userEmail: 1,
+              rating: 1,
+              comment: 1,
+              createdAt: 1,
+            },
+          },
+        ])
+        .toArray();
+
+      res.send(result);
+    });
     app.get("/top-creators", async (req, res) => {
       const result = await promptsCollection.aggregate([
         {
