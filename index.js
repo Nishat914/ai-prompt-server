@@ -367,6 +367,71 @@ async function run() {
 
     });
     //  get
+    app.get("/top-creators", async (req, res) => {
+      const result = await promptsCollection.aggregate([
+        {
+          $match: {
+            status: "approved",
+          },
+        },
+        {
+          $group: {
+            _id: "$creatorEmail",
+            creatorName: { $first: "$creatorName" },
+            creatorEmail: { $first: "$creatorEmail" },
+            totalPrompts: { $sum: 1 },
+            totalCopies: { $sum: "$copyCount" },
+          },
+        },
+        {
+          $lookup: {
+            from: "user", // তোমার user collection-এর নাম
+            localField: "creatorEmail",
+            foreignField: "email",
+            as: "userInfo",
+          },
+        },
+        {
+          $unwind: {
+            path: "$userInfo",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $project: {
+            creatorName: 1,
+            creatorEmail: 1,
+            totalPrompts: 1,
+            totalCopies: 1,
+            creatorImage: "$userInfo.image",
+          },
+        },
+        {
+          $sort: {
+            totalPrompts: -1,
+            totalCopies: -1,
+          },
+        },
+        {
+          $limit: 4,
+        },
+      ]).toArray();
+
+      res.send(result);
+    });
+    app.get("/featured-prompts", async (req, res) => {
+      const result = await promptsCollection
+        .find({
+          status: "approved",
+        })
+        .sort({
+          copyCount: -1,
+        })
+        .limit(6)
+        .toArray();
+
+      res.send(result);
+    });
     app.get("/creator/analytics/:email", async (req, res) => {
       const { email } = req.params;
 
